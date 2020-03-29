@@ -13,7 +13,7 @@ struct dogType{
     long next;
     long prev;
 };
-void Veterinaria();
+void veterinaria();
 void escribir(struct dogType *a);
 long HashFunction(char* nombre);
 

@@ -6,7 +6,8 @@
 
 
 void makeRegister(){     //Opcion 1
-    
+    struct dogType perro;
+    veterinaria();
     
 }
 

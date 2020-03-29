@@ -7,18 +7,6 @@
 #include "veterinaria.h"
 #define TamanoVeterinaria 1000000L
 
-struct dogType{
-    char nombre[32];
-    char tipo[32];
-    long edad;
-    char raza[16];
-    long estatura;
-    float peso;
-    char sexo[2];
-    short initialized;
-    long next;
-    long prev;
-};
 
 
 struct dogType Veterinaria[(2*TamanoVeterinaria)];
@@ -90,6 +78,6 @@ void veterinaria(){
     
     escribir(Veterinaria);
     fclose(fpnombres);
-    return 0;
+    
     
 }
