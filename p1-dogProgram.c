@@ -6,8 +6,81 @@
 
 
 void makeRegister(){     //Opcion 1
+
+
+      
     struct dogType perro;
-    veterinaria();
+    char nombre[32];
+     printw("Ingrese el nombre del perro \n ");
+     refresh();
+     scanf("%32s",nombre);
+     strcpy(perro.nombre, nombre);
+   
+    char tipo[32];
+     printw("Ingrese el tipo del perro \n ");
+     refresh();
+     scanf("%32s",tipo);
+     
+   strcpy( perro.tipo,tipo);
+    int edad;
+     printw("Ingrese la edad del perro \n ");
+     refresh();
+     scanf("%d",&edad);
+    perro.edad=edad;
+    char raza[16];
+     printw("Ingrese la raza del perro \n");
+     refresh();
+     scanf("%16s",raza);
+    strcpy(perro.raza,raza);
+    long estatura;
+     printw("Ingrese la estatura del canchoso \n");
+     refresh();
+     scanf("%ld",&estatura);
+    perro.estatura=estatura;
+  float peso;
+     printw("Ingrese el peso del perro \n");
+     refresh();
+     scanf("%f",&peso);
+    perro.peso=peso;
+
+     
+    char sexo[2];
+     printw("Ingrese 'M' si es macho o 'F' si es hembra \n");
+     refresh();
+     scanf("%2s",sexo);
+     strcpy(perro.sexo,sexo);
+
+     //vamos a abrir el archivo en moco reemplazar 
+
+
+long hashNumber=HashFunction(perro.nombre);
+
+//la estructura pesa    104 bytes
+//vamos a esa posición en el archivo y le buscamos el dato initialized
+
+    short initiliazed;
+   
+    printw("%ld",hashNumber, " \n");
+   refresh();
+   FILE *fp = fopen("dataDogs.dat", "rb+");
+       fseek(fp, (104*hashNumber)+94, SEEK_SET);
+   
+   
+   
+   
+    fread(&initiliazed, 2, 1, fp);
+    printw("%ld",initiliazed, " \n");
+     refresh();
+if(initiliazed==0){
+fseek(fp, 0, SEEK_SET);
+fseek(fp, (104*hashNumber), SEEK_SET);
+perro.initialized=1;
+ fwrite(&perro, 104, 1, fp);
+
+}
+
+   
+    fclose(fp);
     
 }
 
@@ -51,7 +124,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
         switch(opc){
             case 1:{
                 makeRegister();
-                printw("Presione cualquier tecla para continuar..\n");
+               
                 getch();
                 clear();
                 break;
