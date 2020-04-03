@@ -81,7 +81,7 @@ void veterinaria(){
         Veterinaria[index].peso = (2.3 * i + i % 50) + 10;
         if(i %2 == 0) strcpy(Veterinaria[index].sexo, "H");
         else strcpy(Veterinaria[index].sexo, "M");
-       // printf("%li\n",i);
+        printf("%li\n",i);
         //printf("index: %li , %i \n",index,Veterinaria[index].initialized);
          //printf ("%s \n", Veterinaria[index].nombre);
     }
