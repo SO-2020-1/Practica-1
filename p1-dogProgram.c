@@ -109,7 +109,7 @@ void makeRegister(){     //Opcion 1
 		fread(&perro,sizeof(perro),1,fp);
 		printw("%s %s %s","El perro ingresado es",perro.nombre,"\n");
 		printw("%s %d %s","Su id es:",perro.id,"\n");
-		//printw("%s %i %s","Su estado es:",perro.initialized,"\n");
+		printw("%s %i %s","Su estado es:",perro.initialized,"\n");
 		refresh();
 		numOfDogs++;
  
@@ -118,7 +118,8 @@ void makeRegister(){     //Opcion 1
 }
 
 void showRegister(){    //Opcion 2
-	
+
+	//Se muestra la cantidad de perros y se solicita el id a ver
 	long id;
 	struct dogType dog;
 	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
@@ -126,18 +127,20 @@ void showRegister(){    //Opcion 2
 	scanw("%ld",&id);
 	refresh();
 
-	
+	//Se busca en el archivo el struct correspondiente al id
 	FILE *fp = fopen("dataDogs.dat", "rb+");
 	rewind(fp);
 	fseek(fp,(sizeof(dog)*id),SEEK_SET);
 	fread(&dog,sizeof(dog),1,fp);
 
+	//Se valida si el struct es un perro valido
 	if(dog.initialized==0){
 		printw("%s","El id no es valido\n");
 		refresh();
 		return;
 	}
 
+	//Se muestra la informacion del perro ingresado
 	printw("%s %s %s","\nEl perro ingresado es",dog.nombre,"\n");
 	printw("%s %ld %s","ID ",dog.id,"\n");
 	printw("%s %d %s","Edad ",dog.edad,"\n");
@@ -148,47 +151,44 @@ void showRegister(){    //Opcion 2
 	printw("%s %i %s","Su estado es:",dog.initialized,"\n");
 	refresh();
 	
-	int verificador = 0;
 
+	//Se pregunta si se quiere ver la historia medica
+	
+	int verificador = 0;
 	do{
-		printw("%s","Desea ver la historia medica del perro?[S/n]:");
+		printw("%s","Desea ver la historia medica del perro?[S/N]:");
 		refresh();
 		char respuesta[1];
 		scanw("%s",respuesta);
-		if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"n")==0 ){
+		//Se comparada la entrada del usuario para verificar que sea valida.
+		if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"N")==0 ){
 			if(strcmp(respuesta,"S")==0){
+				//Para abrir o crear usamos nano, asi que queremos construir una cadena dirFile...
+				//de la manera "nano HM/id.txt para almacenar las Historias Medicas"
 				char dirFile_1[] = "nano HM/";
 				char dirFile_2[] = ".txt";
 				char file[21];
 				sprintf(file,"%ld",id);
 				char * dirFile ;
+				//nos aseguramos de tener memoria para la construccion del string dirFile 
 				if((dirFile = malloc(strlen(dirFile_1)+strlen(file)+strlen(dirFile_2)+1)) != NULL){
     				dirFile[0] = '\0';   // ensures the memory is an empty string
     				strcat(dirFile,dirFile_1);
     				strcat(dirFile,file);
 					strcat(dirFile,dirFile_2);
 				}
-				
+				//Se abre o crea el archivo en la carpeta HM con el nombre del id del perro
 				system(dirFile);
 			}
 			
 			system("clear");
 
-
-
-
 			verificador = -1;
 		}
 	}while (verificador==0);
 	
-	
-
-
-
-	//system("nano perros.txt");
 	fclose(fp);
-		
-
+	
 }
 
 void deleteRegister(){  //Opcion 3
