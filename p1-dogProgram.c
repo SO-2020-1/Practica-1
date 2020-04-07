@@ -60,13 +60,12 @@ void makeRegister(){     //Opcion 1
 	fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
 	fread(&perroCopia, sizeof(perro), 1, fp);
 
-	
+	perro.initialized = 1;
 
 	//Caso 1: Si la posicion del hash esta vacia, guardamos el perro en esa posicion
 	if(perroCopia.initialized==0){ 
 			rewind(fp);
 			fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
-			perro.initialized = 1;
 			perro.next = -1;
 			perro.prev = -1;
 			perro.id = hashNumber;
@@ -112,6 +111,7 @@ void makeRegister(){     //Opcion 1
 		printw("%s %d %s","Su id es:",perro.id,"\n");
 		//printw("%s %i %s","Su estado es:",perro.initialized,"\n");
 		refresh();
+		numOfDogs++;
  
 	fclose(fp);
 
@@ -119,6 +119,76 @@ void makeRegister(){     //Opcion 1
 
 void showRegister(){    //Opcion 2
 	
+	long id;
+	struct dogType dog;
+	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
+	printw("%s","Ingrese No. ID a ver:");
+	scanw("%ld",&id);
+	refresh();
+
+	
+	FILE *fp = fopen("dataDogs.dat", "rb+");
+	rewind(fp);
+	fseek(fp,(sizeof(dog)*id),SEEK_SET);
+	fread(&dog,sizeof(dog),1,fp);
+
+	if(dog.initialized==0){
+		printw("%s","El id no es valido\n");
+		refresh();
+		return;
+	}
+
+	printw("%s %s %s","\nEl perro ingresado es",dog.nombre,"\n");
+	printw("%s %ld %s","ID ",dog.id,"\n");
+	printw("%s %d %s","Edad ",dog.edad,"\n");
+	printw("%s %d %s","Estatura ",dog.estatura," cm \n");
+	printw("%s %f %s","Peso ",dog.peso," Kg \n");
+	printw("%s %s %s","Raza ",dog.raza,"\n");
+	printw("%s %s %s","Sexo ",dog.sexo,"\n\n");
+	printw("%s %i %s","Su estado es:",dog.initialized,"\n");
+	refresh();
+	
+	int verificador = 0;
+
+	do{
+		printw("%s","Desea ver la historia medica del perro?[S/n]:");
+		refresh();
+		char respuesta[1];
+		scanw("%s",respuesta);
+		if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"n")==0 ){
+			if(strcmp(respuesta,"S")==0){
+				char dirFile_1[] = "nano HM/";
+				char dirFile_2[] = ".txt";
+				char file[21];
+				sprintf(file,"%ld",id);
+				char * dirFile ;
+				if((dirFile = malloc(strlen(dirFile_1)+strlen(file)+strlen(dirFile_2)+1)) != NULL){
+    				dirFile[0] = '\0';   // ensures the memory is an empty string
+    				strcat(dirFile,dirFile_1);
+    				strcat(dirFile,file);
+					strcat(dirFile,dirFile_2);
+				}
+				
+				system(dirFile);
+			}
+			
+			system("clear");
+
+
+
+
+			verificador = -1;
+		}
+	}while (verificador==0);
+	
+	
+
+
+
+	//system("nano perros.txt");
+	fclose(fp);
+		
+
 }
 
 void deleteRegister(){  //Opcion 3
@@ -191,6 +261,8 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 		};
 
 	}while(aux!=-1);
+
+	system("clear");
 
 	endwin(); //Termino el manejo de pantalla
 	
