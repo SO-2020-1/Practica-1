@@ -8,7 +8,6 @@
 
 
 
-
 struct dogType Veterinaria[((unsigned long)(1.9*TamanoVeterinaria))];
 
 long HashFunction(char* nombre){
