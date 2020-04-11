@@ -1,98 +1,397 @@
 #include "stdio.h"   //Librerias estandar para flujo de datos y control de pantalla
 #include "stdlib.h"
 #include "string.h"
+#include "ctype.h"
 #include "curses.h"
 #include "veterinaria.h"    //Libreria propias
+
+long numOfDogs = TamanoVeterinaria;
 
 
 void makeRegister(){     //Opcion 1
 
+	struct dogType perro;
+	char nombre[32];	
+	printw("Ingrese el nombre del perro: \n ");
+	refresh();
+	scanw("%32s",nombre);
 
-      
-    struct dogType perro;
-    char nombre[32];
-     printw("Ingrese el nombre del perro \n ");
-     refresh();
-     scanf("%32s",nombre);
-     strcpy(perro.nombre, nombre);
+	char *s = &(nombre[0]);				//Formateamos el nombre a Primer caracter mayuscula y el resto minuscula
+  	while (*s) {
+    	*s = tolower((unsigned char) *s);
+    	s++;
+  	}
+	s = &(nombre[0]);
+	*s = toupper((unsigned char) *s);
+
+	strcpy( perro.nombre , nombre );
    
-    char tipo[32];
-     printw("Ingrese el tipo del perro \n ");
-     refresh();
-     scanf("%32s",tipo);
-     
-   strcpy( perro.tipo,tipo);
-    int edad;
-     printw("Ingrese la edad del perro \n ");
-     refresh();
-     scanf("%d",&edad);
-    perro.edad=edad;
-    char raza[16];
-     printw("Ingrese la raza del perro \n");
-     refresh();
-     scanf("%16s",raza);
-    strcpy(perro.raza,raza);
-    long estatura;
-     printw("Ingrese la estatura del canchoso \n");
-     refresh();
-     scanf("%ld",&estatura);
-    perro.estatura=estatura;
-  float peso;
-     printw("Ingrese el peso del perro \n");
-     refresh();
-     scanf("%f",&peso);
-    perro.peso=peso;
+	char tipo[32];
+	printw("Ingrese el tipo del perro: \n ");
+	refresh();
+	scanw("%32s",tipo);
+	strcpy( perro.tipo  , tipo );
+	
+	int edad;
+	printw("Ingrese la edad del perro: \n ");
+	refresh();
+	scanw("%d",&edad);
+	perro.edad=edad;
 
-     
-    char sexo[2];
-     printw("Ingrese 'M' si es macho o 'F' si es hembra \n");
-     refresh();
-     scanf("%2s",sexo);
-     strcpy(perro.sexo,sexo);
+	char raza[16];
+	printw("Ingrese la raza del perro: \n");
+	refresh();
+	scanw("%16s",raza);
+	strcpy(perro.raza,raza);
 
-     //vamos a abrir el archivo en moco reemplazar 
-
-
-long hashNumber=HashFunction(perro.nombre);
-
-//la estructura pesa    104 bytes
-//vamos a esa posición en el archivo y le buscamos el dato initialized
-
-    short initiliazed;
-   
-    printw("%ld",hashNumber, " \n");
-   refresh();
-   FILE *fp = fopen("dataDogs.dat", "rb+");
-       fseek(fp, (104*hashNumber)+94, SEEK_SET);
-   
-   
-   
-   
-    fread(&initiliazed, 2, 1, fp);
-    printw("%ld",initiliazed, " \n");
-     refresh();
-if(initiliazed==0){
-fseek(fp, 0, SEEK_SET);
-fseek(fp, (104*hashNumber), SEEK_SET);
-perro.initialized=1;
- fwrite(&perro, 104, 1, fp);
-
-}
-
-   
-    fclose(fp);
+	long estatura;
+	printw("Ingrese la estatura del perro: \n");
+	refresh();
+	scanw("%ld",&estatura);
+	perro.estatura=estatura;
     
+	float peso;
+	printw("Ingrese el peso del perro: \n");
+	refresh();
+	scanw("%f",&peso);
+	perro.peso=peso;
+
+	char sexo[2];
+	printw("Ingrese 'M' si es macho o 'F' si es hembra: \n");
+	refresh();
+	scanw("%2s",sexo);
+	strcpy(perro.sexo,sexo);
+
+	//Empezamos la busqueda del lugar en registro, si ya esta ocupada buscamos la siguiente y etc..
+	
+	FILE *fp = fopen("dataDogs.dat", "rb+");
+
+	long hashNumber = HashFunction(perro.nombre);
+	struct dogType perroCopia;
+   
+	fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
+	fread(&perroCopia, sizeof(perro), 1, fp);
+
+	perro.initialized = 1;
+
+	//Caso 1: Si la posicion del hash esta vacia, guardamos el perro en esa posicion
+	if(perroCopia.initialized==0){ 
+			rewind(fp);
+			fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
+			perro.next = -1;
+			perro.prev = -1;
+			perro.id = hashNumber;
+ 			fwrite(&perro, sizeof(perro), 1, fp);
+	}else{
+		//Caso 2: la posicion del hash esta ocupada por un perro
+		// ... entonces de igual forma se sigue la lista enlazada para saber donde unirlo
+			while(perroCopia.next != -1){
+				long siguiente= perroCopia.next;
+				rewind(fp);
+				fseek(fp, (sizeof(perro)*siguiente), SEEK_SET);
+				fread(&perroCopia, sizeof(perro), 1, fp);
+			};
+			perro.prev = perroCopia.id;
+			perro.next = -1;
+		//buscamos un lugar libre 
+			while (!feof(fp)){
+				fread(&perroCopia,sizeof(perro),1,fp);
+				if(perroCopia.initialized == 0){
+					rewind(fp);
+					fseek(fp,sizeof(perro)*perroCopia.id,SEEK_SET);
+					break;
+				}
+			};
+		//escribimos
+			perro.id = perroCopia.id;
+			fwrite(&perro, sizeof(perro), 1, fp);
+		//por ultimo como la lista es doble enlazada tenemos que poner el next al anterior
+			rewind(fp);
+			fseek(fp,sizeof(perro)*perro.prev,SEEK_SET);
+			fread(&perroCopia,sizeof(perroCopia),1,fp);
+			perroCopia.next = perro.id;
+			rewind(fp);
+			fseek(fp,sizeof(perro)*perro.prev,SEEK_SET);
+			fwrite(&perroCopia,sizeof(perroCopia),1,fp);
+		
+
+	}	
+		rewind(fp);
+		fseek(fp,sizeof(perro)*perro.id,SEEK_SET);
+		fread(&perro,sizeof(perro),1,fp);
+		printw("%s %s %s","El perro ingresado es",perro.nombre,"\n");
+		printw("%s %d %s","Su id es:",perro.id,"\n");
+		printw("%s %i %s","Su estado es:",perro.initialized,"\n");
+		refresh();
+		numOfDogs++;
+ 
+	fclose(fp);
+
 }
 
 void showRegister(){    //Opcion 2
-    
+
+	//Se muestra la cantidad de perros y se solicita el id a ver
+	long id;
+	struct dogType dog;
+	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
+	printw("%s","Ingrese No. ID a ver:");
+	scanw("%ld",&id);
+	refresh();
+
+	//Se busca en el archivo el struct correspondiente al id
+	FILE *fp = fopen("dataDogs.dat", "rb+");
+	rewind(fp);
+	fseek(fp,(sizeof(dog)*id),SEEK_SET);
+	fread(&dog,sizeof(dog),1,fp);
+
+	//Se valida si el struct es un perro valido
+	if(dog.initialized==0){
+		printw("%s","El id no es valido\n");
+		refresh();
+		return;
+	}
+
+	//Se muestra la informacion del perro ingresado
+	printw("%s %s %s","\nEl perro ingresado es",dog.nombre,"\n");
+	printw("%s %ld %s","ID ",dog.id,"\n");
+	printw("%s %d %s","Edad ",dog.edad,"\n");
+	printw("%s %d %s","Estatura ",dog.estatura," cm \n");
+	printw("%s %f %s","Peso ",dog.peso," Kg \n");
+	printw("%s %s %s","Raza ",dog.raza,"\n");
+	printw("%s %s %s","Sexo ",dog.sexo,"\n\n");
+	printw("%s %i %s","Su estado es:",dog.initialized,"\n");
+	refresh();
+	
+
+	//Se pregunta si se quiere ver la historia medica
+	
+	int verificador = 0;
+	do{
+		printw("%s","Desea ver la historia medica del perro?[S/N]:");
+		refresh();
+		char respuesta[1];
+		scanw("%s",respuesta);
+		//Se comparada la entrada del usuario para verificar que sea valida.
+		if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"N")==0 ){
+			if(strcmp(respuesta,"S")==0){
+				//Para abrir o crear usamos nano, asi que queremos construir una cadena dirFile...
+				//de la manera "nano HM/id.txt para almacenar las Historias Medicas"
+				char dirFile_1[] = "nano HM/";
+				char dirFile_2[] = ".txt";
+				char file[21];
+				sprintf(file,"%ld",id);
+				char * dirFile ;
+				//nos aseguramos de tener memoria para la construccion del string dirFile 
+				if((dirFile = malloc(strlen(dirFile_1)+strlen(file)+strlen(dirFile_2)+1)) != NULL){
+    				dirFile[0] = '\0';   // ensures the memory is an empty string
+    				strcat(dirFile,dirFile_1);
+    				strcat(dirFile,file);
+					strcat(dirFile,dirFile_2);
+				}
+				//Se abre o crea el archivo en la carpeta HM con el nombre del id del perro
+				system(dirFile);
+			}
+			
+			system("clear");
+
+			verificador = -1;
+		}
+	}while (verificador==0);
+	
+	fclose(fp);
+	
 }
 
 void deleteRegister(){  //Opcion 3
 
+	//Se muestra la cantidad de perros y se solicita el id a ver
+	long id;
+	struct dogType dog;
+	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
+	printw("%s","Ingrese No. ID del perro que desea borrar:");
+	scanw("%ld",&id);
+	refresh();
+
+	//Se busca y lee en el archivo el struct correspondiente al id
+	FILE *fp = fopen("dataDogs.dat", "rb+");
+	rewind(fp);
+	fseek(fp,(sizeof(dog)*id),SEEK_SET);
+	fread(&dog,sizeof(dog),1,fp);
+
+	//Se valida si el struct es un perro valido
+	if(dog.initialized==0){
+		printw("%s","El id no es valido\n");
+		refresh();
+		return;
+	}
+
+	struct dogType dogAux;
+	
+	if(dog.prev != -1 && dog.next != -1){ //Caso 1: Borramos cualquier nodo en medio de la LL
+		
+		//Leemos el nodo anterior y cambiamos su referencia al next
+		fseek(fp,(sizeof(dog)*dog.prev),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		dogAux.next = dog.next;
+		//Reescribimos
+		fseek(fp,(sizeof(struct dogType)*dog.prev),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+		//Leemos el nodo posterior y cambiamos su referencia al prev
+		fseek(fp,(sizeof(dog)*dog.next),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		dogAux.prev = dog.prev;
+		//Reescribimos
+		fseek(fp,(sizeof(struct dogType)*dog.next),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+		//Escribimos la struct de forma para que se se elimine
+		strcpy(dogAux.nombre,"eliminado");
+		dogAux.id = dog.id;
+		dogAux.initialized = 0;
+		dogAux.prev = -1;
+		dogAux.next = -1;
+		//Eliminamos el nodo
+		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+
+	}else if(dog.prev == -1 && dog.next != -1){//Caso 2: Borramos head de la LL
+		
+		//Leemos el nodo posterior y cambiamos su referencia al prev por -1 y el id por el del head
+		fseek(fp,(sizeof(dog)*dog.next),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		dogAux.prev = -1;
+		//guardamos el id del nodo en idEliminated para poder borrarlo despues
+		long idEliminated = dogAux.id;
+		dogAux.id = dog.id;
+		//Reescribimos el nodo posterior
+		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+		//Escribimos la struct de forma para que se se elimine
+		dogAux.id = idEliminated;
+		strcpy(dogAux.nombre,"eliminado");
+		dogAux.initialized = 0;
+		dogAux.prev = -1;
+		dogAux.next = -1;
+		//Eliminamos el nodo 
+		fseek(fp,(sizeof(struct dogType)*idEliminated),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+		//Leemos la nueva head
+		fseek(fp,(sizeof(dog)*dog.id),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		
+
+		//Si tiene una referencia a next cambiamos la referencia de este nodo a prev al id actual.
+		if(dogAux.next !=-1){
+			//Leemos el next del nuevo head
+			fseek(fp,(sizeof(dog)*dogAux.next),SEEK_SET);
+			fread(&dogAux,sizeof(dog),1,fp);
+			//Cambiamos la referencia
+			dogAux.prev = dog.id;
+			//Reescribimos
+			fseek(fp,(sizeof(struct dogType)*dogAux.id),SEEK_SET);
+			fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		}
+	
+
+	} else if(dog.next == -1 && dog.prev != -1){ //Caso 3: Borramos Tail de la LL
+		
+		//Leemos el nodo previo al tail
+		fseek(fp,(sizeof(dog)*dog.prev),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		//Le asignamos su referencia a next por -1
+		dogAux.next = -1;
+		//Reescribimos
+		fseek(fp,(sizeof(struct dogType)*dog.prev),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+		//Escribimos la struct de forma para que se se elimine
+		dogAux.id = dog.id;
+		strcpy(dogAux.nombre,"eliminado");
+		dogAux.initialized = 0;
+		dogAux.prev = -1;
+		dogAux.next = -1;
+		//Eliminamos la tail
+		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+
+	}else{	//Borramos la unica instancia del nombre en el archivo
+		
+		//Buscamos la instancia en el archivo
+		fseek(fp,(sizeof(dog)*dog.id),SEEK_SET);
+		fread(&dogAux,sizeof(dog),1,fp);
+		//Escribimos la struct de forma para que se se elimine
+		dogAux.id = dog.id;
+		strcpy(dogAux.nombre,"eliminado");
+		dogAux.initialized = 0;
+		dogAux.prev = -1;
+		dogAux.next = -1;
+		//Eliminamos el registro
+		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
+		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+
+	}
+	
+	
+	fclose(fp);
+
 }
 
 void seekRegister(){    //Opcion 4
+
+	//Preguntamos el nombre a buscar
+	printw("%s", "Por favor ingrese el nombre del perro a buscar:");
+	refresh();
+	char nombre[32];
+	scanw("%s",&nombre);
+	
+	//Formateamos el nombre a Primer caracter mayuscula y el resto minuscula
+	char *s = &(nombre[0]);
+  	while (*s) {
+    	*s = tolower((unsigned char) *s);
+    	s++;
+  	}
+	s = &(nombre[0]);
+	*s = toupper((unsigned char) *s);
+
+	//Buscamos el hash del nombre para tener la LL donde esten las ocurrencias
+	long identifier = HashFunction(nombre);
+
+	struct dogType *dog = malloc(sizeof(struct dogType));
+	
+	//Leemos la estructura head en el archivo correspondiente al hash
+	FILE *fp = fopen("dataDogs.dat", "rb+");
+	rewind(fp);
+	fseek(fp,(sizeof(struct dogType)*identifier),SEEK_SET);
+	fread(dog,sizeof(struct dogType),1,fp);
+	
+	//Imprimimos todos los nodos que tengan el mismo nombre en la LL
+	do{
+
+		if (strcmp(nombre,dog->nombre)==0){
+			printw("%s %s %d\n",dog->nombre," ID: ",dog->id);
+			refresh();
+		}
+		long siguiente= dog->next;
+
+		if(siguiente != -1){
+			rewind(fp);
+			fseek(fp, (sizeof(struct dogType)*siguiente), SEEK_SET);
+			fread(dog, sizeof(struct dogType), 1, fp);
+			
+			if(strcmp(nombre,dog->nombre)==0 && dog->next == -1)
+				printw("%s %s %d\n",dog->nombre," ID: ",dog->id);
+				refresh();
+		}
+	}while(dog->next != -1);
+
+	//Liberamos memoria
+	free(dog);
 
 }
 
@@ -100,81 +399,75 @@ void seekRegister(){    //Opcion 4
 
 void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
-    initscr();          //Inicio la capacidad de utilizar funciones de curses.h
-    
-    int opc = 0;        //Declaracion de variable para elegir opcion
-    int aux = 0;        //Variable para salir del ciclo
-    
-    do{
-        
-        clear();        //limpio pantalla
-       
-                        //Opciones, se usa printw en vez de printf para manejo de pantalla
+	initscr();          //Inicio la capacidad de utilizar funciones de curses.h
+	
+	int opc = 0;        //Declaracion de variable para elegir opcion
+	int aux = 0;        //Variable para salir del ciclo
+	
+	do{
+		
+		clear();        //limpio pantalla
+	   
+						//Opciones, se usa printw en vez de printf para manejo de pantalla
 
-        printw("MENU\n\n");
-        printw("1.Ingresar registro.\n");
-        printw("2.Ver registro.\n");
-        printw("3.Borrar registro.\n");
-        printw("4.Buscar registro.\n");
-        printw("5.SALIR.\n");
-        refresh();      //Permite mostrar todos los printw
-        scanf("%d",&opc);//pido la opcion deseada por el usuario
+		printw("MENU\n\n");
+		printw("1.Ingresar registro.\n");
+		printw("2.Ver registro.\n");
+		printw("3.Borrar registro.\n");
+		printw("4.Buscar registro.\n");
+		printw("5.SALIR.\n");
+		refresh();      //Permite mostrar todos los printw
+		scanw("%d",&opc);//pido la opcion deseada por el usuario
+		clear();
+		//Segun la opcion se va por el caso correspondiente
+		switch(opc){
+			case 1:{
+				makeRegister();
+			   	printw("Presione cualquier tecla para continuar..\n");
+				getch();
+				clear();
+				break;
+			}
+			case 2:{
+				showRegister();
+				printw("Presione cualquier tecla para continuar..\n");
+				getch();
+				clear();
+				break;
+			}
+			case 3:{
+				deleteRegister();
+				printw("Presione cualquier tecla para continuar..\n");
+				getch();
+				clear();
+				break;
+			}
+			case 4:{
+				seekRegister();
+				printw("Presione cualquier tecla para continuar..\n");
+				getch();    
+				clear();
+				break;
+			}
+			case 5:{
+				aux=-1;
+			}
+			
 
-        //Segun la opcion se va por el caso correspondiente
-        switch(opc){
-            case 1:{
-                makeRegister();
-               
-                getch();
-                clear();
-                break;
-            }
-            case 2:{
-                showRegister();
-                printw("Presione cualquier tecla para continuar..\n");
-                getch();
-                clear();
-                break;
-            }
-            case 3:{
-                deleteRegister();
-                printw("Presione cualquier tecla para continuar..\n");
-                getch();
-                clear();
-                break;
-            }
-            case 4:{
-                seekRegister();
-                printw("Presione cualquier tecla para continuar..\n");
-                getch();    
-                clear();
-                break;
-            }
-            case 5:{
-                aux=-1;
-            }
-            
+		};
 
-        };
+	}while(aux!=-1);
 
-    }while(aux!=-1);
+	system("clear");
 
-
-
-
-
-
-
-endwin(); //Termino el manejo de pantalla
-
-
-    
+	endwin(); //Termino el manejo de pantalla
+	
 }
 
 
 int main(){
-    
-    MENU();
-    return 0;
+	
+	MENU();
+	return 0;
 
 }

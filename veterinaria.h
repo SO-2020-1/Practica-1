@@ -1,7 +1,9 @@
 #ifndef VETERINARIA_H_INCLUDED
 #define VETERINARIA_H_INCLUDED
+#define TamanoVeterinaria 1000000L
 
 struct dogType{
+    long id;
     char nombre[32];
     char tipo[32];
     long edad;
@@ -16,6 +18,7 @@ struct dogType{
 void veterinaria();
 void escribir(struct dogType *a);
 long HashFunction(char* nombre);
+
 
 
 
