@@ -342,7 +342,7 @@ void deleteRegister(){  //Opcion 3
 
 }
 
-void seekRegister(){    //Opcion 4
+void seekRegister(WINDOW *w){    //Opcion 4
 
 	//Preguntamos el nombre a buscar
 	printw("%s", "Por favor ingrese el nombre del perro a buscar:");
@@ -371,23 +371,83 @@ void seekRegister(){    //Opcion 4
 	fread(dog,sizeof(struct dogType),1,fp);
 	
 	//Imprimimos todos los nodos que tengan el mismo nombre en la LL
+	int counter=0;
+	
+	char name[32];
+	strcpy(name,nombre);
+	
+
 	do{
 
-		if (strcmp(nombre,dog->nombre)==0){
-			printw("%s %s %d\n",dog->nombre," ID: ",dog->id);
+		if (strcmp(name,dog->nombre)==0){
+			wprintw(w,"%s %s %d\n",dog->nombre," ID: ",dog->id);
 			refresh();
+			counter+=1;
 		}
-		long siguiente= dog->next;
 
+		long siguiente = dog->next;
+		
+		
 		if(siguiente != -1){
 			rewind(fp);
 			fseek(fp, (sizeof(struct dogType)*siguiente), SEEK_SET);
 			fread(dog, sizeof(struct dogType), 1, fp);
 			
-			if(strcmp(nombre,dog->nombre)==0 && dog->next == -1)
-				printw("%s %s %d\n",dog->nombre," ID: ",dog->id);
+			if(strcmp(name,dog->nombre)==0 && dog->next == -1){
+				wprintw(w,"%s %s %d\n",dog->nombre," ID: ",dog->id);
 				refresh();
+				counter+=1;
+			}
+
+			
 		}
+		wrefresh(w);
+
+		//printw("%s\n%s\n%s","imprimo antes del bucle",dog->nombre,name);
+
+		refresh();
+		
+		
+
+			int verificador = 0;
+
+	do{	
+		if (counter>=7)
+		{
+			printw("seguir viendo registros? [S/N]:");
+			char respuesta[1];
+			refresh();
+			scanw("%s",&respuesta);
+						//Se comparada la entrada del usuario para verificar que sea valida.
+			if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"N")==0 ){
+						
+
+				if (strcmp(respuesta,"S")==0){
+					counter = 0;
+					clear();
+				}
+
+				if (strcmp(respuesta,"N")==0)
+					return;
+					verificador = -1;	
+				}
+
+				
+
+		}else{
+			break;
+		}
+				
+				
+					
+					
+	} while (verificador == 0);		
+		
+
+		refresh();
+
+
+
 	}while(dog->next != -1);
 
 	//Liberamos memoria
@@ -399,8 +459,9 @@ void seekRegister(){    //Opcion 4
 
 void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
-	initscr();          //Inicio la capacidad de utilizar funciones de curses.h
-	
+	WINDOW *w =initscr();          //Inicio la capacidad de utilizar funciones de curses.h
+	//scrollok(w, TRUE);
+	//idlok(w,TRUE);
 	int opc = 0;        //Declaracion de variable para elegir opcion
 	int aux = 0;        //Variable para salir del ciclo
 	
@@ -443,7 +504,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 				break;
 			}
 			case 4:{
-				seekRegister();
+				seekRegister(w);
 				printw("Presione cualquier tecla para continuar..\n");
 				getch();    
 				clear();
@@ -466,7 +527,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
 
 int main(){
-	
+
 	MENU();
 	return 0;
 
