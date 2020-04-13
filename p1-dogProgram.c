@@ -337,7 +337,7 @@ void deleteRegister(){  //Opcion 3
 
 	}
 	
-	
+	numOfDogs--;
 	fclose(fp);
 
 }
@@ -375,13 +375,14 @@ void seekRegister(WINDOW *w){    //Opcion 4
 	
 	char name[32];
 	strcpy(name,nombre);
+	endwin();
 	
 
 	do{
 
 		if (strcmp(name,dog->nombre)==0){
-			wprintw(w,"%s %s %d\n",dog->nombre," ID: ",dog->id);
-			refresh();
+			printf("%s %s %ld\n",dog->nombre," ID: ",dog->id);
+			//refresh();
 			counter+=1;
 		}
 
@@ -394,24 +395,24 @@ void seekRegister(WINDOW *w){    //Opcion 4
 			fread(dog, sizeof(struct dogType), 1, fp);
 			
 			if(strcmp(name,dog->nombre)==0 && dog->next == -1){
-				wprintw(w,"%s %s %d\n",dog->nombre," ID: ",dog->id);
-				refresh();
+				printf("%s %s %ld\n",dog->nombre," ID: ",dog->id);
+				//refresh();
 				counter+=1;
 			}
 
 			
 		}
-		wrefresh(w);
+		//wrefresh(w);
 
 		//printw("%s\n%s\n%s","imprimo antes del bucle",dog->nombre,name);
 
-		refresh();
+		//refresh();
 		
 		
 
 			int verificador = 0;
 
-	do{	
+/*	do{	
 		if (counter>=7)
 		{
 			printw("seguir viendo registros? [S/N]:");
@@ -441,15 +442,21 @@ void seekRegister(WINDOW *w){    //Opcion 4
 				
 					
 					
-	} while (verificador == 0);		
+	} while (verificador == 0);	*/	
 		
 
-		refresh();
+		//refresh();
 
 
 
 	}while(dog->next != -1);
 
+
+	printf("Presione cualquier tecla para continuar..\n");
+				getch(); 
+				clear();   
+				return;
+				//clear();
 	//Liberamos memoria
 	free(dog);
 
@@ -459,7 +466,10 @@ void seekRegister(WINDOW *w){    //Opcion 4
 
 void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
-	WINDOW *w =initscr();          //Inicio la capacidad de utilizar funciones de curses.h
+
+	
+	WINDOW *w =initscr();
+	          //Inicio la capacidad de utilizar funciones de curses.h
 	//scrollok(w, TRUE);
 	//idlok(w,TRUE);
 	int opc = 0;        //Declaracion de variable para elegir opcion
@@ -505,9 +515,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 			}
 			case 4:{
 				seekRegister(w);
-				printw("Presione cualquier tecla para continuar..\n");
-				getch();    
-				clear();
+				
 				break;
 			}
 			case 5:{
