@@ -3,6 +3,7 @@
 #include "string.h"
 #include "ctype.h"
 #include "curses.h"
+#include <termios.h>
 #include "veterinaria.h"    //Libreria propias
 
 long numOfDogs = TamanoVeterinaria;
@@ -343,7 +344,7 @@ void deleteRegister(){  //Opcion 3
 }
 
 void seekRegister(WINDOW *w){    //Opcion 4
-
+	system("clear");
 	//Preguntamos el nombre a buscar
 	printw("%s", "Por favor ingrese el nombre del perro a buscar:");
 	refresh();
@@ -441,7 +442,7 @@ void seekRegister(WINDOW *w){    //Opcion 4
 				
 				
 					
-					
+			
 	} while (verificador == 0);	*/	
 		
 
@@ -451,15 +452,23 @@ void seekRegister(WINDOW *w){    //Opcion 4
 
 	}while(dog->next != -1);
 
+	
+	
+	//system("read -n 1 -s -r ");
+	printf("%s","Presione cualquier tecla para continuar..");
 
-	printf("Presione cualquier tecla para continuar..\n");
-				getch(); 
-				clear();   
-				return;
-				//clear();
+	struct termios info;
+	tcgetattr(0, &info);          /* get current terminal attirbutes; 0 is the file descriptor for stdin */
+	info.c_lflag &= ~ICANON;      /* disable canonical mode */
+	info.c_cc[VMIN] = 1;          /* wait until at least one keystroke available */
+	info.c_cc[VTIME] = 0;         /* no timeout */
+	tcsetattr(0, TCSANOW, &info); /* set immediately */
+
+	getchar();
+	system("clear");
 	//Liberamos memoria
 	free(dog);
-
+	return;
 }
 
 
@@ -508,15 +517,18 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 			}
 			case 3:{
 				deleteRegister();
-				printw("Presione cualquier tecla para continuar..\n");
+				printw("Presione cualquier tecla para continuar..\n");		
 				getch();
 				clear();
 				break;
 			}
 			case 4:{
+
+				
 				seekRegister(w);
 				
 				break;
+
 			}
 			case 5:{
 				aux=-1;
