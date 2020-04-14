@@ -3,15 +3,15 @@
 #include "string.h"
 #include "ctype.h"
 #include "curses.h"
-#include <termios.h>
 #include "veterinaria.h"    //Libreria propias
-
+#include <termios.h>
 long numOfDogs = TamanoVeterinaria;
 
 
 void makeRegister(){     //Opcion 1
 
-	struct dogType perro;
+	struct dogType *perro = malloc(sizeof(struct dogType));
+	
 	char nombre[32];	
 	printw("Ingrese el nombre del perro: \n ");
 	refresh();
@@ -25,107 +25,108 @@ void makeRegister(){     //Opcion 1
 	s = &(nombre[0]);
 	*s = toupper((unsigned char) *s);
 
-	strcpy( perro.nombre , nombre );
+	strcpy( perro->nombre , nombre );
    
 	char tipo[32];
 	printw("Ingrese el tipo del perro: \n ");
 	refresh();
 	scanw("%32s",tipo);
-	strcpy( perro.tipo  , tipo );
+	strcpy( perro->tipo  , tipo );
 	
 	int edad;
 	printw("Ingrese la edad del perro: \n ");
 	refresh();
 	scanw("%d",&edad);
-	perro.edad=edad;
+	perro->edad=edad;
 
 	char raza[16];
 	printw("Ingrese la raza del perro: \n");
 	refresh();
 	scanw("%16s",raza);
-	strcpy(perro.raza,raza);
+	strcpy(perro->raza,raza);
 
 	long estatura;
 	printw("Ingrese la estatura del perro: \n");
 	refresh();
 	scanw("%ld",&estatura);
-	perro.estatura=estatura;
+	perro->estatura=estatura;
     
 	float peso;
 	printw("Ingrese el peso del perro: \n");
 	refresh();
 	scanw("%f",&peso);
-	perro.peso=peso;
+	perro->peso=peso;
 
 	char sexo[2];
 	printw("Ingrese 'M' si es macho o 'F' si es hembra: \n");
 	refresh();
 	scanw("%2s",sexo);
-	strcpy(perro.sexo,sexo);
+	strcpy(perro->sexo,sexo);
 
 	//Empezamos la busqueda del lugar en registro, si ya esta ocupada buscamos la siguiente y etc..
 	
 	FILE *fp = fopen("dataDogs.dat", "rb+");
 
-	long hashNumber = HashFunction(perro.nombre);
-	struct dogType perroCopia;
+	long hashNumber = HashFunction(perro->nombre);
+	struct dogType *perroCopia = malloc(sizeof(struct dogType));
    
-	fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
-	fread(&perroCopia, sizeof(perro), 1, fp);
+	fseek(fp, (sizeof(struct dogType)*hashNumber), SEEK_SET);
+	fread(perroCopia, sizeof(struct dogType), 1, fp);
 
-	perro.initialized = 1;
+	perro->initialized = 1;
 
 	//Caso 1: Si la posicion del hash esta vacia, guardamos el perro en esa posicion
-	if(perroCopia.initialized==0){ 
+	if(perroCopia->initialized==0){ 
 			rewind(fp);
-			fseek(fp, (sizeof(perro)*hashNumber), SEEK_SET);
-			perro.next = -1;
-			perro.prev = -1;
-			perro.id = hashNumber;
- 			fwrite(&perro, sizeof(perro), 1, fp);
+			fseek(fp, (sizeof(struct dogType)*hashNumber), SEEK_SET);
+			perro->next = -1;
+			perro->prev = -1;
+			perro->id = hashNumber;
+ 			fwrite(perro, sizeof(struct dogType), 1, fp);
 	}else{
 		//Caso 2: la posicion del hash esta ocupada por un perro
 		// ... entonces de igual forma se sigue la lista enlazada para saber donde unirlo
-			while(perroCopia.next != -1){
-				long siguiente= perroCopia.next;
+			while(perroCopia->next != -1){
+				long siguiente= perroCopia->next;
 				rewind(fp);
-				fseek(fp, (sizeof(perro)*siguiente), SEEK_SET);
-				fread(&perroCopia, sizeof(perro), 1, fp);
+				fseek(fp, (sizeof(struct dogType)*siguiente), SEEK_SET);
+				fread(perroCopia, sizeof(struct dogType), 1, fp);
 			};
-			perro.prev = perroCopia.id;
-			perro.next = -1;
+			perro->prev = perroCopia->id;
+			perro->next = -1;
 		//buscamos un lugar libre 
 			while (!feof(fp)){
-				fread(&perroCopia,sizeof(perro),1,fp);
-				if(perroCopia.initialized == 0){
+				fread(perroCopia,sizeof(struct dogType),1,fp);
+				if(perroCopia->initialized == 0){
 					rewind(fp);
-					fseek(fp,sizeof(perro)*perroCopia.id,SEEK_SET);
+					fseek(fp,sizeof(struct dogType)*perroCopia->id,SEEK_SET);
 					break;
 				}
 			};
 		//escribimos
-			perro.id = perroCopia.id;
-			fwrite(&perro, sizeof(perro), 1, fp);
+			perro->id = perroCopia->id;
+			fwrite(perro, sizeof(struct dogType), 1, fp);
 		//por ultimo como la lista es doble enlazada tenemos que poner el next al anterior
 			rewind(fp);
-			fseek(fp,sizeof(perro)*perro.prev,SEEK_SET);
-			fread(&perroCopia,sizeof(perroCopia),1,fp);
-			perroCopia.next = perro.id;
+			fseek(fp,sizeof(struct dogType)*perro->prev,SEEK_SET);
+			fread(perroCopia,sizeof(struct dogType),1,fp);
+			perroCopia->next = perro->id;
 			rewind(fp);
-			fseek(fp,sizeof(perro)*perro.prev,SEEK_SET);
-			fwrite(&perroCopia,sizeof(perroCopia),1,fp);
+			fseek(fp,sizeof(struct dogType)*perro->prev,SEEK_SET);
+			fwrite(perroCopia,sizeof(struct dogType),1,fp);
 		
 
 	}	
 		rewind(fp);
-		fseek(fp,sizeof(perro)*perro.id,SEEK_SET);
-		fread(&perro,sizeof(perro),1,fp);
-		printw("%s %s %s","El perro ingresado es",perro.nombre,"\n");
-		printw("%s %d %s","Su id es:",perro.id,"\n");
-		printw("%s %i %s","Su estado es:",perro.initialized,"\n");
+		fseek(fp,sizeof(struct dogType)*perro->id,SEEK_SET);
+		fread(perro,sizeof(struct dogType),1,fp);
+		printw("%s %s %s","El perro ingresado es",perro->nombre,"\n");
+		printw("%s %d %s","Su id es:",perro->id,"\n");
+		printw("%s %i %s","Su estado es:",perro->initialized,"\n");
 		refresh();
 		numOfDogs++;
- 
+		free(perro);
+		free(perroCopia);
 	fclose(fp);
 
 }
@@ -134,7 +135,7 @@ void showRegister(){    //Opcion 2
 
 	//Se muestra la cantidad de perros y se solicita el id a ver
 	long id;
-	struct dogType dog;
+	struct dogType *dog = malloc(sizeof(struct dogType));
 	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
 	printw("%s","Ingrese No. ID a ver:");
 	scanw("%ld",&id);
@@ -143,25 +144,25 @@ void showRegister(){    //Opcion 2
 	//Se busca en el archivo el struct correspondiente al id
 	FILE *fp = fopen("dataDogs.dat", "rb+");
 	rewind(fp);
-	fseek(fp,(sizeof(dog)*id),SEEK_SET);
-	fread(&dog,sizeof(dog),1,fp);
+	fseek(fp,(sizeof(struct  dogType)*id),SEEK_SET);
+	fread(dog,sizeof(struct dogType),1,fp);
 
 	//Se valida si el struct es un perro valido
-	if(dog.initialized==0){
+	if(dog->initialized==0){
 		printw("%s","El id no es valido\n");
 		refresh();
 		return;
 	}
 
 	//Se muestra la informacion del perro ingresado
-	printw("%s %s %s","\nEl perro ingresado es",dog.nombre,"\n");
-	printw("%s %ld %s","ID ",dog.id,"\n");
-	printw("%s %d %s","Edad ",dog.edad,"\n");
-	printw("%s %d %s","Estatura ",dog.estatura," cm \n");
-	printw("%s %f %s","Peso ",dog.peso," Kg \n");
-	printw("%s %s %s","Raza ",dog.raza,"\n");
-	printw("%s %s %s","Sexo ",dog.sexo,"\n\n");
-	printw("%s %i %s","Su estado es:",dog.initialized,"\n");
+	printw("%s %s %s","\nEl perro ingresado es",dog->nombre,"\n");
+	printw("%s %ld %s","ID ",dog->id,"\n");
+	printw("%s %d %s","Edad ",dog->edad,"\n");
+	printw("%s %d %s","Estatura ",dog->estatura," cm \n");
+	printw("%s %f %s","Peso ",dog->peso," Kg \n");
+	printw("%s %s %s","Raza ",dog->raza,"\n");
+	printw("%s %s %s","Sexo ",dog->sexo,"\n\n");
+	printw("%s %i %s","Su estado es:",dog->initialized,"\n");
 	refresh();
 	
 
@@ -201,6 +202,7 @@ void showRegister(){    //Opcion 2
 	}while (verificador==0);
 	
 	fclose(fp);
+	free(dog);
 	
 }
 
@@ -208,7 +210,7 @@ void deleteRegister(){  //Opcion 3
 
 	//Se muestra la cantidad de perros y se solicita el id a ver
 	long id;
-	struct dogType dog;
+	struct dogType *dog = malloc(sizeof(struct dogType));
 	printw("%s %d %s","Cantidad de perros registrados:\n", numOfDogs, "\n");
 	printw("%s","Ingrese No. ID del perro que desea borrar:");
 	scanw("%ld",&id);
@@ -217,129 +219,131 @@ void deleteRegister(){  //Opcion 3
 	//Se busca y lee en el archivo el struct correspondiente al id
 	FILE *fp = fopen("dataDogs.dat", "rb+");
 	rewind(fp);
-	fseek(fp,(sizeof(dog)*id),SEEK_SET);
-	fread(&dog,sizeof(dog),1,fp);
+	fseek(fp,(sizeof(struct dogType)*id),SEEK_SET);
+	fread(dog,sizeof(struct dogType),1,fp);
 
 	//Se valida si el struct es un perro valido
-	if(dog.initialized==0){
+	if(dog->initialized==0){
 		printw("%s","El id no es valido\n");
 		refresh();
 		return;
 	}
 
-	struct dogType dogAux;
+	struct dogType *dogAux = malloc(sizeof(struct dogType));
 	
-	if(dog.prev != -1 && dog.next != -1){ //Caso 1: Borramos cualquier nodo en medio de la LL
+	if(dog->prev != -1 && dog->next != -1){ //Caso 1: Borramos cualquier nodo en medio de la LL
 		
 		//Leemos el nodo anterior y cambiamos su referencia al next
-		fseek(fp,(sizeof(dog)*dog.prev),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
-		dogAux.next = dog.next;
+		fseek(fp,(sizeof(struct dogType)*dog->prev),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
+		dogAux->next = dog->next;
 		//Reescribimos
-		fseek(fp,(sizeof(struct dogType)*dog.prev),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->prev),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 		//Leemos el nodo posterior y cambiamos su referencia al prev
-		fseek(fp,(sizeof(dog)*dog.next),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
-		dogAux.prev = dog.prev;
+		fseek(fp,(sizeof(struct dogType)*dog->next),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
+		dogAux->prev = dog->prev;
 		//Reescribimos
-		fseek(fp,(sizeof(struct dogType)*dog.next),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->next),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 		//Escribimos la struct de forma para que se se elimine
-		strcpy(dogAux.nombre,"eliminado");
-		dogAux.id = dog.id;
-		dogAux.initialized = 0;
-		dogAux.prev = -1;
-		dogAux.next = -1;
+		strcpy(dogAux->nombre,"eliminado");
+		dogAux->id = dog->id;
+		dogAux->initialized = 0;
+		dogAux->prev = -1;
+		dogAux->next = -1;
 		//Eliminamos el nodo
-		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 
-	}else if(dog.prev == -1 && dog.next != -1){//Caso 2: Borramos head de la LL
+	}else if(dog->prev == -1 && dog->next != -1){//Caso 2: Borramos head de la LL
 		
 		//Leemos el nodo posterior y cambiamos su referencia al prev por -1 y el id por el del head
-		fseek(fp,(sizeof(dog)*dog.next),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
-		dogAux.prev = -1;
+		fseek(fp,(sizeof(struct dogType)*dog->next),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
+		dogAux->prev = -1;
 		//guardamos el id del nodo en idEliminated para poder borrarlo despues
-		long idEliminated = dogAux.id;
-		dogAux.id = dog.id;
+		long idEliminated = dogAux->id;
+		dogAux->id = dog->id;
 		//Reescribimos el nodo posterior
-		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 		//Escribimos la struct de forma para que se se elimine
-		dogAux.id = idEliminated;
-		strcpy(dogAux.nombre,"eliminado");
-		dogAux.initialized = 0;
-		dogAux.prev = -1;
-		dogAux.next = -1;
+		dogAux->id = idEliminated;
+		strcpy(dogAux->nombre,"eliminado");
+		dogAux->initialized = 0;
+		dogAux->prev = -1;
+		dogAux->next = -1;
 		//Eliminamos el nodo 
 		fseek(fp,(sizeof(struct dogType)*idEliminated),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 		//Leemos la nueva head
-		fseek(fp,(sizeof(dog)*dog.id),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
 		
 
 		//Si tiene una referencia a next cambiamos la referencia de este nodo a prev al id actual.
-		if(dogAux.next !=-1){
+		if(dogAux->next !=-1){
 			//Leemos el next del nuevo head
-			fseek(fp,(sizeof(dog)*dogAux.next),SEEK_SET);
-			fread(&dogAux,sizeof(dog),1,fp);
+			fseek(fp,(sizeof(struct dogType)*dogAux->next),SEEK_SET);
+			fread(dogAux,sizeof(struct dogType),1,fp);
 			//Cambiamos la referencia
-			dogAux.prev = dog.id;
+			dogAux->prev = dog->id;
 			//Reescribimos
-			fseek(fp,(sizeof(struct dogType)*dogAux.id),SEEK_SET);
-			fwrite(&dogAux,sizeof(struct dogType),1,fp);
+			fseek(fp,(sizeof(struct dogType)*dogAux->id),SEEK_SET);
+			fwrite(dogAux,sizeof(struct dogType),1,fp);
 		}
 	
 
-	} else if(dog.next == -1 && dog.prev != -1){ //Caso 3: Borramos Tail de la LL
+	} else if(dog->next == -1 && dog->prev != -1){ //Caso 3: Borramos Tail de la LL
 		
 		//Leemos el nodo previo al tail
-		fseek(fp,(sizeof(dog)*dog.prev),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->prev),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
 		//Le asignamos su referencia a next por -1
-		dogAux.next = -1;
+		dogAux->next = -1;
 		//Reescribimos
-		fseek(fp,(sizeof(struct dogType)*dog.prev),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->prev),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 		//Escribimos la struct de forma para que se se elimine
-		dogAux.id = dog.id;
-		strcpy(dogAux.nombre,"eliminado");
-		dogAux.initialized = 0;
-		dogAux.prev = -1;
-		dogAux.next = -1;
+		dogAux->id = dog->id;
+		strcpy(dogAux->nombre,"eliminado");
+		dogAux->initialized = 0;
+		dogAux->prev = -1;
+		dogAux->next = -1;
 		//Eliminamos la tail
-		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 
 	}else{	//Borramos la unica instancia del nombre en el archivo
 		
 		//Buscamos la instancia en el archivo
-		fseek(fp,(sizeof(dog)*dog.id),SEEK_SET);
-		fread(&dogAux,sizeof(dog),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fread(dogAux,sizeof(struct dogType),1,fp);
 		//Escribimos la struct de forma para que se se elimine
-		dogAux.id = dog.id;
-		strcpy(dogAux.nombre,"eliminado");
-		dogAux.initialized = 0;
-		dogAux.prev = -1;
-		dogAux.next = -1;
+		dogAux->id = dog->id;
+		strcpy(dogAux->nombre,"eliminado");
+		dogAux->initialized = 0;
+		dogAux->prev = -1;
+		dogAux->next = -1;
 		//Eliminamos el registro
-		fseek(fp,(sizeof(struct dogType)*dog.id),SEEK_SET);
-		fwrite(&dogAux,sizeof(struct dogType),1,fp);
+		fseek(fp,(sizeof(struct dogType)*dog->id),SEEK_SET);
+		fwrite(dogAux,sizeof(struct dogType),1,fp);
 
 	}
 	
 	numOfDogs--;
 	fclose(fp);
+	free(dog);
+	free(dogAux);
 
 }
 
@@ -403,58 +407,20 @@ void seekRegister(WINDOW *w){    //Opcion 4
 
 			
 		}
-		//wrefresh(w);
-
-		//printw("%s\n%s\n%s","imprimo antes del bucle",dog->nombre,name);
-
-		//refresh();
+		
 		
 		
 
-			int verificador = 0;
-
-/*	do{	
-		if (counter>=7)
-		{
-			printw("seguir viendo registros? [S/N]:");
-			char respuesta[1];
-			refresh();
-			scanw("%s",&respuesta);
-						//Se comparada la entrada del usuario para verificar que sea valida.
-			if( strcmp(respuesta,"S")==0 || strcmp(respuesta,"N")==0 ){
-						
-
-				if (strcmp(respuesta,"S")==0){
-					counter = 0;
-					clear();
-				}
-
-				if (strcmp(respuesta,"N")==0)
-					return;
-					verificador = -1;	
-				}
-
-				
-
-		}else{
-			break;
-		}
-				
-				
-					
 			
-	} while (verificador == 0);	*/	
-		
 
-		//refresh();
+
 
 
 
 	}while(dog->next != -1);
 
 	
-	
-	//system("read -n 1 -s -r ");
+//system("read -n 1 -s -r ");
 	printf("%s","Presione cualquier tecla para continuar..");
 
 	struct termios info;
@@ -469,6 +435,7 @@ void seekRegister(WINDOW *w){    //Opcion 4
 	//Liberamos memoria
 	free(dog);
 	return;
+
 }
 
 
@@ -479,8 +446,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 	
 	WINDOW *w =initscr();
 	          //Inicio la capacidad de utilizar funciones de curses.h
-	//scrollok(w, TRUE);
-	//idlok(w,TRUE);
+	
 	int opc = 0;        //Declaracion de variable para elegir opcion
 	int aux = 0;        //Variable para salir del ciclo
 	
@@ -517,18 +483,15 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 			}
 			case 3:{
 				deleteRegister();
-				printw("Presione cualquier tecla para continuar..\n");		
+				printw("Presione cualquier tecla para continuar..\n");
 				getch();
 				clear();
 				break;
 			}
 			case 4:{
-
-				
 				seekRegister(w);
 				
 				break;
-
 			}
 			case 5:{
 				aux=-1;
