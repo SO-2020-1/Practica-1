@@ -8,7 +8,7 @@
 
 
 
-struct dogType Veterinaria[((unsigned long)(1.9*TamanoVeterinaria))];
+struct dogType Veterinaria[((unsigned long)(1.2*TamanoVeterinaria))];
 
 long HashFunction(char* nombre){
     long ascii=0;
@@ -16,7 +16,7 @@ long HashFunction(char* nombre){
     for(long long currentChar = 0 ; currentChar < strlen(nombre) ; currentChar++){
         unsigned long long _p = powl(a,currentChar);
         ascii += ((unsigned int)(nombre[currentChar]))*(unsigned long long)_p;
-        ascii %= (unsigned long)(1.9*TamanoVeterinaria);
+        ascii %= (unsigned long)(1.2*TamanoVeterinaria);
     }
     
     return ascii;
@@ -25,7 +25,15 @@ long HashFunction(char* nombre){
 void escribir(struct dogType *a){
     FILE *fp;
 	fp = fopen ( "dataDogs.dat", "wb" );
-    fwrite(a, sizeof(struct dogType),(unsigned long)(1.9*TamanoVeterinaria),fp);
+
+    FILE *fp2;
+    fp2=fopen("infoVet.dat", "wb");
+    long nuevoTamanio=TamanoVeterinaria;
+		
+    fwrite(&nuevoTamanio, sizeof(long), 1, fp2);
+    fclose(fp2);
+
+    fwrite(a, sizeof(struct dogType),(unsigned long)(1.2*TamanoVeterinaria),fp);
     fclose ( fp );
  	return;
 }
@@ -36,7 +44,7 @@ void veterinaria(){
     fpnombres = fopen("nombres.txt","r");
     bool colision = true;
     char nombre[32];
-    for(long x = 0; x<((unsigned long)(1.9*TamanoVeterinaria));x++){
+    for(long x = 0; x<((unsigned long)(1.2*TamanoVeterinaria));x++){
         Veterinaria[x].initialized = 0;
         Veterinaria[x].next = -1;
         Veterinaria[x].prev = -1;
@@ -57,7 +65,7 @@ void veterinaria(){
             if(Veterinaria[index].initialized == 1){
            //printf("%s %s %s ", Veterinaria[index].nombre ,"colision!!\n ", nombre);
             
-            index = (index+1)%((unsigned long)(1.9*TamanoVeterinaria));
+            index = (index+1)%((unsigned long)(1.2*TamanoVeterinaria));
           
             
             }

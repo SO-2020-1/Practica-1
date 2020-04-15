@@ -5,8 +5,47 @@
 #include "curses.h"
 #include "veterinaria.h"    //Libreria propias
 #include <termios.h>
-long numOfDogs = TamanoVeterinaria;
+long numOfDogs=0 ;
 
+long sumarPerro(){
+
+	FILE *fp;
+	fp=fopen("infoVet.dat", "rb+");
+	
+	long numberOfDogs;
+	fread(&numberOfDogs,sizeof(numberOfDogs),1,fp);
+	numberOfDogs++;
+	fclose(fp);
+	fp=fopen("infoVet.dat", "wb+");
+
+	fwrite(&numberOfDogs, sizeof(numberOfDogs), 1, fp);
+	fclose(fp);
+	return numberOfDogs;
+		
+		
+
+	
+
+
+}
+long borrarPerro(){
+	FILE *fp;
+	fp=fopen("infoVet.dat", "rb+");
+	
+	long numberOfDogs;
+	fread(&numberOfDogs,sizeof(numberOfDogs),1,fp);
+	numberOfDogs--;
+	fclose(fp);
+	fp=fopen("infoVet.dat", "wb+");
+	
+	fwrite(&numberOfDogs, sizeof(numberOfDogs), 1, fp);
+	fclose(fp);
+	return numberOfDogs;
+		
+		
+
+	
+}
 
 void makeRegister(){     //Opcion 1
 
@@ -124,7 +163,7 @@ void makeRegister(){     //Opcion 1
 		printw("%s %d %s","Su id es:",perro->id,"\n");
 		printw("%s %i %s","Su estado es:",perro->initialized,"\n");
 		refresh();
-		numOfDogs++;
+		numOfDogs=sumarPerro();;
 		free(perro);
 		free(perroCopia);
 	fclose(fp);
@@ -340,7 +379,7 @@ void deleteRegister(){  //Opcion 3
 
 	}
 	
-	numOfDogs--;
+	numOfDogs=borrarPerro();
 	fclose(fp);
 	free(dog);
 	free(dogAux);
@@ -437,6 +476,20 @@ void seekRegister(WINDOW *w){    //Opcion 4
 	return;
 
 }
+long getNumOfDogs(){
+	
+	FILE *fp;
+	fp=fopen("infoVet.dat", "rb+");
+	long numberOfDogs;
+	fread(&numberOfDogs,sizeof(numberOfDogs),1,fp);
+	fclose(fp);
+	return numberOfDogs;
+
+	
+
+}
+
+
 
 
 
@@ -510,7 +563,7 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
 
 int main(){
-
+	numOfDogs= getNumOfDogs();
 	MENU();
 	return 0;
 
