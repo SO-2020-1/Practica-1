@@ -3,11 +3,24 @@
 #include "string.h"
 #include "ctype.h"
 #include "curses.h"
-#include "veterinaria.h"    //Libreria propias
 #include <termios.h>
-long numOfDogs=0 ;
+#include "veterinaria.h"    //Libreria propias
 
-long sumarPerro(){
+
+long numOfDogs = 0;
+
+long getNumOfDogs(){	//Funcion para obtener numOfDogs de infoVet.dat
+	
+	FILE *fp;
+	fp=fopen("infoVet.dat", "rb+");
+	long numberOfDogs;
+	fread(&numberOfDogs,sizeof(numberOfDogs),1,fp);
+	fclose(fp);
+	return numberOfDogs;
+
+}
+
+long sumarPerro(){		//Funcion para modificar infoVet y mantener numOfDogs entre instancias
 
 	FILE *fp;
 	fp=fopen("infoVet.dat", "rb+");
@@ -21,14 +34,10 @@ long sumarPerro(){
 	fwrite(&numberOfDogs, sizeof(numberOfDogs), 1, fp);
 	fclose(fp);
 	return numberOfDogs;
-		
-		
-
-	
-
 
 }
-long borrarPerro(){
+
+long borrarPerro(){		//Funcion para modificar infoVet y mantener numOfDogs entre instancias
 	FILE *fp;
 	fp=fopen("infoVet.dat", "rb+");
 	
@@ -156,16 +165,19 @@ void makeRegister(){     //Opcion 1
 		
 
 	}	
-		rewind(fp);
-		fseek(fp,sizeof(struct dogType)*perro->id,SEEK_SET);
-		fread(perro,sizeof(struct dogType),1,fp);
-		printw("%s %s %s","El perro ingresado es",perro->nombre,"\n");
-		printw("%s %d %s","Su id es:",perro->id,"\n");
-		printw("%s %i %s","Su estado es:",perro->initialized,"\n");
-		refresh();
-		numOfDogs=sumarPerro();;
-		free(perro);
-		free(perroCopia);
+	//Verificamos la informacion del perro que ingresamos
+	rewind(fp);
+	fseek(fp,sizeof(struct dogType)*perro->id,SEEK_SET);
+	fread(perro,sizeof(struct dogType),1,fp);
+	printw("%s %s %s","El perro ingresado es",perro->nombre,"\n");
+	printw("%s %d %s","Su id es:",perro->id,"\n");
+	printw("%s %i %s","Su estado es:",perro->initialized,"\n");
+	refresh();
+
+	//Guardamos la informacion del nuevo perro en numOfDogs y liberamos memoria
+	numOfDogs=sumarPerro();;
+	free(perro);
+	free(perroCopia);
 	fclose(fp);
 
 }
@@ -420,7 +432,8 @@ void seekRegister(WINDOW *w){    //Opcion 4
 	char name[32];
 	strcpy(name,nombre);
 	endwin();
-	
+
+	//imprimimos por consola en vez de ncurses para mostrar todos los perros sin complicaciones
 
 	do{
 
@@ -432,7 +445,6 @@ void seekRegister(WINDOW *w){    //Opcion 4
 
 		long siguiente = dog->next;
 		
-		
 		if(siguiente != -1){
 			rewind(fp);
 			fseek(fp, (sizeof(struct dogType)*siguiente), SEEK_SET);
@@ -443,23 +455,12 @@ void seekRegister(WINDOW *w){    //Opcion 4
 				//refresh();
 				counter+=1;
 			}
-
-			
 		}
-		
-		
-		
-
-			
-
-
-
-
-
 	}while(dog->next != -1);
 
 	
-//system("read -n 1 -s -r ");
+	//Como imprimimos por consola en vez de getch, utilizamos getchar modificando sus parametros con la libreria termios
+
 	printf("%s","Presione cualquier tecla para continuar..");
 
 	struct termios info;
@@ -476,21 +477,6 @@ void seekRegister(WINDOW *w){    //Opcion 4
 	return;
 
 }
-long getNumOfDogs(){
-	
-	FILE *fp;
-	fp=fopen("infoVet.dat", "rb+");
-	long numberOfDogs;
-	fread(&numberOfDogs,sizeof(numberOfDogs),1,fp);
-	fclose(fp);
-	return numberOfDogs;
-
-	
-
-}
-
-
-
 
 
 void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
@@ -555,14 +541,16 @@ void MENU(){            //Funcion menu ciclica que sera ejecutada en main()
 
 	}while(aux!=-1);
 
-	system("clear");
+	
 
 	endwin(); //Termino el manejo de pantalla
-	
+
+	system("clear");
 }
 
 
 int main(){
+	
 	numOfDogs= getNumOfDogs();
 	MENU();
 	return 0;
