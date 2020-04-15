@@ -208,6 +208,7 @@ void showRegister(){    //Opcion 2
 	//Se muestra la informacion del perro ingresado
 	printw("%s %s %s","\nEl perro ingresado es",dog->nombre,"\n");
 	printw("%s %ld %s","ID ",dog->id,"\n");
+	printw("%s %s %s","Tipo ",dog->tipo,"\n");
 	printw("%s %d %s","Edad ",dog->edad,"\n");
 	printw("%s %d %s","Estatura ",dog->estatura," cm \n");
 	printw("%s %f %s","Peso ",dog->peso," Kg \n");
